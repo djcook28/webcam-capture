@@ -1,65 +1,52 @@
+import streamlit as st
 import cv2
 import time
-import email
+import send_email
+import frame_processor
 
-video = cv2.VideoCapture(0)
-last_frame = None
+st.title("Webcam Movement Capture")
+start = st.button("Start")
 
-# movement_list tracks whether there was or was not movement in the last 2 frames
-movement_list = [False, False]
+if start:
+    displayed_image = st.image([])
+    video = cv2.VideoCapture(0)
+    stop = st.button('Stop')
 
-while True:
-    # movement_detected checks if there was movement in the current frame
-    movement_detected = False
-    check, unmodified_frame = video.read()
+    last_frame = None
+    # movement_list tracks whether there was or was not movement in the last 2 frames
+    movement_list = [False, False]
 
-    # changes the image from color to greyscale reducing the frame array
-    current_frame = cv2.cvtColor(unmodified_frame, cv2.COLOR_BGR2GRAY)
-    # blurs the frame array to better call out movement
-    current_frame = cv2.GaussianBlur(current_frame, (21, 21), 0)
+    while not stop:
+        # movement_detected checks if there was movement in the current frame
+        movement_detected = False
+        check, unmodified_frame = video.read()
 
-    if last_frame is None:
+        # changes the image from color to greyscale reducing the frame array
+        current_frame = frame_processor.simplify_frame(unmodified_frame)
+
+        if last_frame is None:
+            last_frame = current_frame
+
+        movement_detected, unmodified_frame = frame_processor.frame_compare(last_frame, current_frame, unmodified_frame)
+
+        # append latest frame movement detection to list, only retain last 2 values
+        movement_list.append(movement_detected)
+        movement_list = movement_list[-2:]
+
+        # checks if the frame before had movement and this current frame does not.  If so we want to send an email with the last frame
+        if(movement_list[0] == True and movement_list[1] == False):
+            send_email.send_email(last_frame)
+
+        current_datetime = time.strftime("%m/%d/%Y %H:%M:%S", time.localtime()).split(" ")
+
+        cv2.putText(img=unmodified_frame, text=current_datetime[0], org=(50, 30), fontFace=cv2.FONT_HERSHEY_PLAIN,
+                    thickness=2, fontScale=1, color=(20, 100, 20), lineType=cv2.LINE_AA)
+        cv2.putText(img=unmodified_frame, text=current_datetime[1], org=(50, 50), fontFace=cv2.FONT_HERSHEY_PLAIN,
+                    thickness=2, fontScale=1, color=(20, 100, 20), lineType=cv2.LINE_AA)
+
+        displayed_image.image(unmodified_frame)
+
         last_frame = current_frame
 
-    # computes the pixel differences between last and current frame
-    delta_frame = cv2.absdiff(last_frame, current_frame)
-
-    # magnifies pixel differences that are more white (>60) to max white
-    thresh_frame = cv2.threshold(delta_frame, 45, 255, cv2.THRESH_BINARY)[1]
-
-    # dilation helps to thicken the image filling in some of the black spaces
-    dil_frame = cv2.dilate(thresh_frame, None, iterations=2)
-
-    # detects contours around the white area moving objects
-    contours, check = cv2.findContours(dil_frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    for contour in contours:
-        # calculates the area of the white space contour and evaluates if it's too small to be an important object
-        if cv2.contourArea(contour) < 5000:
-            continue
-        x, y, w, h = cv2.boundingRect(contour)
-        rectangle = cv2.rectangle(unmodified_frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
-        # if there was movement this frame, update movement_detected to True
-        if rectangle.any():
-            movement_detected = True
-
-    # append latest frame movement detection to list, only retain last 2 values
-    movement_list.append(movement_detected)
-    movement_list = movement_list[-2:]
-
-    # checks if the frame before had movement and this current frame does not.  If so we want to send an email with the last frame
-    if(movement_list[0] == True and movement_list[1] == False):
-        email.send_email(last_frame)
-
-    cv2.imshow("My Video", unmodified_frame)
-
-    key = cv2.waitKey(1)
-
-    if key == ord("q"):
-        break
-
-    last_frame = current_frame
-
-    time.sleep(1)
-
-video.release()
+        time.sleep(1)
+    video.release()
