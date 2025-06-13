@@ -1,10 +1,16 @@
 import cv2
 import time
+import email
 
 video = cv2.VideoCapture(0)
 last_frame = None
 
+# movement_list tracks whether there was or was not movement in the last 2 frames
+movement_list = [False, False]
+
 while True:
+    # movement_detected checks if there was movement in the current frame
+    movement_detected = False
     check, unmodified_frame = video.read()
 
     # changes the image from color to greyscale reducing the frame array
@@ -32,7 +38,18 @@ while True:
         if cv2.contourArea(contour) < 5000:
             continue
         x, y, w, h = cv2.boundingRect(contour)
-        cv2.rectangle(unmodified_frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
+        rectangle = cv2.rectangle(unmodified_frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
+        # if there was movement this frame, update movement_detected to True
+        if rectangle.any():
+            movement_detected = True
+
+    # append latest frame movement detection to list, only retain last 2 values
+    movement_list.append(movement_detected)
+    movement_list = movement_list[-2:]
+
+    # checks if the frame before had movement and this current frame does not.  If so we want to send an email with the last frame
+    if(movement_list[0] == True and movement_list[1] == False):
+        email.send_email(last_frame)
 
     cv2.imshow("My Video", unmodified_frame)
 
