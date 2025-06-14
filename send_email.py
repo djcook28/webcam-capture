@@ -1,2 +1,3 @@
-def send_email(last_frame):
-    print("email was sent")
+
+def send_email(image):
+    print('image')

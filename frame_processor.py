@@ -22,7 +22,7 @@ def frame_compare(last_frame, current_frame, unmodified_frame):
 
     for contour in contours:
         # calculates the area of the white space contour and evaluates if it's too small to be an important object
-        if cv2.contourArea(contour) < 5000:
+        if cv2.contourArea(contour) < 8000:
             continue
         x, y, w, h = cv2.boundingRect(contour)
         rectangle = cv2.rectangle(unmodified_frame, (x, y), (x + w, y + h), (0, 255, 0), 3)

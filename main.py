@@ -6,6 +6,7 @@ import frame_processor
 
 st.title("Webcam Movement Capture")
 start = st.button("Start")
+captured_images = []
 
 if start:
     displayed_image = st.image([])
@@ -29,13 +30,20 @@ if start:
 
         movement_detected, unmodified_frame = frame_processor.frame_compare(last_frame, current_frame, unmodified_frame)
 
+        if movement_detected:
+            captured_images.append(current_frame)
+            captured_images = captured_images[-10:]
+
         # append latest frame movement detection to list, only retain last 2 values
         movement_list.append(movement_detected)
         movement_list = movement_list[-2:]
 
         # checks if the frame before had movement and this current frame does not.  If so we want to send an email with the last frame
-        if(movement_list[0] == True and movement_list[1] == False):
-            send_email.send_email(last_frame)
+        if movement_list[0] == True and movement_list[1] == False:
+            middle_image = captured_images[int(len(captured_images)/2)]
+            cv2.imwrite('images/image.png', middle_image)
+            send_email.send_email('images/image.png')
+            captured_images = []
 
         current_datetime = time.strftime("%m/%d/%Y %H:%M:%S", time.localtime()).split(" ")
 
