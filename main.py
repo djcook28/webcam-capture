@@ -46,7 +46,7 @@ if start:
         if movement_list[0] == True and movement_list[1] == False:
             middle_image = captured_images[int(len(captured_images)/2)]
             cv2.imwrite(f'images/image{movement_index}.png', middle_image)
-            #start separate thread to send email to keep video capture smooth
+            # start separate thread to send email to keep video capture smooth
             email_thread = Thread(target=send_email.send_email, args=(f'images/image{movement_index}.png',))
             email_thread.daemon = True
             email_thread.start()
