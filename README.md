@@ -1,13 +1,15 @@
 # Webcam Movement Capture
 
 ## Description
-A Python-based application using OpenCV and Streamlit to capture movement from a webcam. When distinct motion is detected, an image is saved and sent via email.
+A Python-based application using OpenCV, Streamlit and Threading to capture movement from a webcam.
+When distinct motion is detected, an image is saved and a separate thread sends the image via email.
 
 ## Features
 - Detects movement using frame comparison
 - Captures and stores images when movement is detected
 - Sends detected movement snapshots via email
 - Displays the processed video stream with timestamps
+- Utilizes thread to keep webcam seamless
 
 ## Installation
 1. Clone the repository:

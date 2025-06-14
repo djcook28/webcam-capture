@@ -3,6 +3,7 @@ import cv2
 import time
 import send_email
 import frame_processor
+from threading import Thread
 
 st.title("Webcam Movement Capture")
 start = st.button("Start")
@@ -45,7 +46,11 @@ if start:
         if movement_list[0] == True and movement_list[1] == False:
             middle_image = captured_images[int(len(captured_images)/2)]
             cv2.imwrite(f'images/image{movement_index}.png', middle_image)
-            send_email.send_email(f'images/image{movement_index}.png')
+            #start separate thread to send email to keep video capture smooth
+            email_thread = Thread(target=send_email.send_email, args=(f'images/image{movement_index}.png',))
+            email_thread.daemon = True
+            email_thread.start()
+
             # clear list of images once email is sent
             captured_images = []
             # increment movement index
@@ -62,7 +67,7 @@ if start:
 
         last_frame = current_frame
 
-        time.sleep(1)
+        time.sleep(.1)
 
     movement_index = 0
     video.release()
