@@ -7,6 +7,8 @@ import frame_processor
 st.title("Webcam Movement Capture")
 start = st.button("Start")
 captured_images = []
+# used to track and create unique file names for different movements detected throughout the run of the program
+movement_index = 0
 
 if start:
     displayed_image = st.image([])
@@ -32,6 +34,7 @@ if start:
 
         if movement_detected:
             captured_images.append(current_frame)
+            # only retain the last 10 frames in the list
             captured_images = captured_images[-10:]
 
         # append latest frame movement detection to list, only retain last 2 values
@@ -41,9 +44,12 @@ if start:
         # checks if the frame before had movement and this current frame does not.  If so we want to send an email with the last frame
         if movement_list[0] == True and movement_list[1] == False:
             middle_image = captured_images[int(len(captured_images)/2)]
-            cv2.imwrite('images/image.png', middle_image)
-            send_email.send_email('images/image.png')
+            cv2.imwrite(f'images/image{movement_index}.png', middle_image)
+            send_email.send_email(f'images/image{movement_index}.png')
+            # clear list of images once email is sent
             captured_images = []
+            # increment movement index
+            movement_index = movement_index+1
 
         current_datetime = time.strftime("%m/%d/%Y %H:%M:%S", time.localtime()).split(" ")
 
@@ -57,4 +63,6 @@ if start:
         last_frame = current_frame
 
         time.sleep(1)
+
+    movement_index = 0
     video.release()
